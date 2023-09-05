@@ -1021,6 +1021,10 @@ namespace olc
 		uint32_t GetFPS() const;
 		// Gets last update of elapsed time
 		float GetElapsedTime() const;
+		// Returns whether the mouse cursor exists inside the window or outside of it.
+		const bool IsMouseInsideWindow() const;
+		// Gets Actual Window pos
+		const olc::vi2d& GetWindowPos() const;
 		// Gets Actual Window size
 		const olc::vi2d& GetWindowSize() const;
 		// Gets pixel scale
@@ -1218,6 +1222,7 @@ namespace olc
 		olc::vi2d	vMousePosCache = { 0, 0 };
 		olc::vi2d   vMouseWindowPos = { 0, 0 };
 		int32_t		nMouseWheelDeltaCache = 0;
+		olc::vi2d	vWindowPos = { 0, 0 };
 		olc::vi2d	vWindowSize = { 0, 0 };
 		olc::vi2d	vViewPos = { 0, 0 };
 		olc::vi2d	vViewSize = { 0,0 };
@@ -1288,6 +1293,7 @@ namespace olc
 		// "Break In" Functions
 		void olc_UpdateMouse(int32_t x, int32_t y);
 		void olc_UpdateMouseWheel(int32_t delta);
+		void olc_UpdateWindowPos(int32_t x, int32_t y);
 		void olc_UpdateWindowSize(int32_t x, int32_t y);
 		void olc_UpdateViewport();
 		void olc_ConstructFontSheet();
@@ -1997,6 +2003,7 @@ namespace olc
 
 		// Construct the window
 		if (platform->CreateWindowPane({ 30,30 }, vWindowSize, bFullScreen) != olc::OK) return olc::FAIL;
+		olc_UpdateWindowPos(30,30);
 		olc_UpdateWindowSize(vWindowSize.x, vWindowSize.y);
 
 		// Start the thread
@@ -2121,6 +2128,12 @@ namespace olc
 
 	float PixelGameEngine::GetElapsedTime() const
 	{ return fLastElapsed; }
+
+	const bool PixelGameEngine::IsMouseInsideWindow() const
+	{ return GetMouseX()>=0&&GetMouseY()>=0&&GetMouseX()<GetScreenSize().x&&GetMouseY()<GetScreenSize().y; }
+
+	const olc::vi2d& PixelGameEngine::GetWindowPos() const
+	{ return vWindowPos; }
 
 	const olc::vi2d& PixelGameEngine::GetWindowSize() const
 	{ return vWindowSize; }
@@ -2513,7 +2526,7 @@ namespace olc
 			if (maxx < t1x) maxx = t1x;
 			if (maxx < t2x) maxx = t2x;
 			drawline(minx, maxx, y);    // Draw line from min to max points found on the y
-										// Now increase y
+			// Now increase y
 			if (!changed1) t1x += signx1;
 			t1x += t1xp;
 			if (!changed2) t2x += signx2;
@@ -2826,14 +2839,14 @@ namespace olc
 	{
 		olc::vf2d vScreenSpacePos =
 		{
-			  (pos.x * vInvScreenSize.x) * 2.0f - 1.0f,
+			(pos.x * vInvScreenSize.x) * 2.0f - 1.0f,
 			-((pos.y * vInvScreenSize.y) * 2.0f - 1.0f)
 		};
 
-		
+
 		olc::vf2d vScreenSpaceDim =
 		{
-			  ((pos.x + source_size.x * scale.x) * vInvScreenSize.x) * 2.0f - 1.0f,
+			((pos.x + source_size.x * scale.x) * vInvScreenSize.x) * 2.0f - 1.0f,
 			-(((pos.y + source_size.y * scale.y) * vInvScreenSize.y) * 2.0f - 1.0f)
 		};
 
@@ -3480,7 +3493,7 @@ namespace olc
 		pKeyboardState[keyConsoleExit].bPressed = false;
 		pKeyboardState[keyConsoleExit].bReleased = true;
 	}
-	
+
 	void PixelGameEngine::ConsoleClear()
 	{ sConsoleLines.clear(); }
 
@@ -3545,7 +3558,7 @@ namespace olc
 
 		// Draw Shadow
 		GradientFillRectDecal({ 0,0 }, olc::vf2d(vScreenSize), olc::PixelF(0, 0, 0.5f, 0.5f), olc::PixelF(0, 0, 0.25f, 0.5f), olc::PixelF(0, 0, 0.25f, 0.5f), olc::PixelF(0, 0, 0.25f, 0.5f));
-				
+
 		// Draw the console buffer
 		SetDecalMode(olc::DecalMode::NORMAL);
 		for (int32_t nLine = 0; nLine < vConsoleSize.y; nLine++)
@@ -3714,6 +3727,11 @@ namespace olc
 		olc_UpdateViewport();
 	}
 
+	void PixelGameEngine::olc_UpdateWindowPos(int32_t x, int32_t y)
+	{
+		vWindowPos = { x, y };
+	}
+
 	void PixelGameEngine::olc_UpdateMouseWheel(int32_t delta)
 	{ nMouseWheelDeltaCache += delta; }
 
@@ -3728,10 +3746,6 @@ namespace olc
 		y -= vViewPos.y;
 		vMousePosCache.x = (int32_t)(((float)x / (float)(vWindowSize.x - (vViewPos.x * 2)) * (float)vScreenSize.x));
 		vMousePosCache.y = (int32_t)(((float)y / (float)(vWindowSize.y - (vViewPos.y * 2)) * (float)vScreenSize.y));
-		if (vMousePosCache.x >= (int32_t)vScreenSize.x)	vMousePosCache.x = vScreenSize.x - 1;
-		if (vMousePosCache.y >= (int32_t)vScreenSize.y)	vMousePosCache.y = vScreenSize.y - 1;
-		if (vMousePosCache.x < 0) vMousePosCache.x = 0;
-		if (vMousePosCache.y < 0) vMousePosCache.y = 0;
 	}
 
 	void PixelGameEngine::olc_UpdateMouseState(int32_t button, bool state)
@@ -3991,12 +4005,12 @@ namespace olc
 		fontRenderable.Decal()->Update();
 
 		constexpr std::array<uint8_t, 96> vSpacing = { {
-			0x03,0x25,0x16,0x08,0x07,0x08,0x08,0x04,0x15,0x15,0x08,0x07,0x15,0x07,0x24,0x08,
-			0x08,0x17,0x08,0x08,0x08,0x08,0x08,0x08,0x08,0x08,0x24,0x15,0x06,0x07,0x16,0x17,
-			0x08,0x08,0x08,0x08,0x08,0x08,0x08,0x08,0x08,0x17,0x08,0x08,0x17,0x08,0x08,0x08,
-			0x08,0x08,0x08,0x08,0x17,0x08,0x08,0x08,0x08,0x17,0x08,0x15,0x08,0x15,0x08,0x08,
-			0x24,0x18,0x17,0x17,0x17,0x17,0x17,0x17,0x17,0x33,0x17,0x17,0x33,0x18,0x17,0x17,
-			0x17,0x17,0x17,0x17,0x07,0x17,0x17,0x18,0x18,0x17,0x17,0x07,0x33,0x07,0x08,0x00, } };
+				0x03,0x25,0x16,0x08,0x07,0x08,0x08,0x04,0x15,0x15,0x08,0x07,0x15,0x07,0x24,0x08,
+				0x08,0x17,0x08,0x08,0x08,0x08,0x08,0x08,0x08,0x08,0x24,0x15,0x06,0x07,0x16,0x17,
+				0x08,0x08,0x08,0x08,0x08,0x08,0x08,0x08,0x08,0x17,0x08,0x08,0x17,0x08,0x08,0x08,
+				0x08,0x08,0x08,0x08,0x17,0x08,0x08,0x08,0x08,0x17,0x08,0x15,0x08,0x15,0x08,0x08,
+				0x24,0x18,0x17,0x17,0x17,0x17,0x17,0x17,0x17,0x33,0x17,0x17,0x33,0x18,0x17,0x17,
+				0x17,0x17,0x17,0x17,0x07,0x17,0x17,0x18,0x18,0x17,0x17,0x07,0x33,0x07,0x08,0x00, } };
 
 		for (auto c : vSpacing) vFontSpacing.push_back({ c >> 4, c & 15 });
 
@@ -4022,7 +4036,7 @@ namespace olc
 
 			{olc::Key::OEM_1, ";", ":"}, {olc::Key::OEM_2, "/", "?"}, {olc::Key::OEM_3, "\'", "@"}, {olc::Key::OEM_4, "[", "{"},
 			{olc::Key::OEM_5, "\\", "|"}, {olc::Key::OEM_6, "]", "}"}, {olc::Key::OEM_7, "#", "~"}, 
-			
+
 			// {olc::Key::TAB, "\t", "\t"}
 		};
 #endif
@@ -4351,7 +4365,7 @@ namespace olc
 
 		void PrepareDrawing() override
 		{
-			
+
 			//ClearBuffer(olc::GREEN, true);
 			glEnable(GL_BLEND);
 			nDecalMode = DecalMode::NORMAL;
@@ -4447,7 +4461,7 @@ namespace olc
 				}
 
 				glEnd();
-
+			
 				glMatrixMode(GL_PROJECTION); glPopMatrix();
 				glMatrixMode(GL_MODELVIEW);  glPopMatrix();
 				glDisable(GL_DEPTH_TEST);
@@ -4477,7 +4491,7 @@ namespace olc
 
 				glEnd();
 			}
-			
+
 
 			//glDisable(GL_DEPTH_TEST);
 		}
@@ -4648,7 +4662,7 @@ namespace olc
 //	typedef void CALLSTYLE locDrawBuffers_t(GLsizei n, const GLenum* bufs);
 //	typedef void CALLSTYLE locBlendFuncSeparate_t(GLenum srcRGB, GLenum dstRGB, GLenum srcAlpha, GLenum dstAlpha);
 
-	
+
 
 	class Renderer_OGL33 : public olc::Renderer
 	{
@@ -5138,7 +5152,7 @@ namespace olc
 		}
 
 		ULONG_PTR	token;
-		
+
 		~GDIPlusStartup()
 		{
 			// Well, MarcusTU thought this was important :D
@@ -5523,7 +5537,18 @@ namespace olc
 			return olc::OK;
 		}
 
-		virtual olc::rcode HandleSystemEvent() override { return olc::rcode::FAIL; }
+		virtual olc::rcode HandleSystemEvent() override { 
+			struct tagPOINT p{0,0};
+			//Update mouse positions and states outside the window.
+			GetCursorPos(&p);
+			ptrPGE->olc_UpdateMouse(p.x-ptrPGE->GetWindowPos().x,p.y-ptrPGE->GetWindowPos().y);
+			ptrPGE->olc_UpdateMouseState(0,GetAsyncKeyState(VK_LBUTTON)>>7);
+			ptrPGE->olc_UpdateMouseState(1,GetAsyncKeyState(VK_RBUTTON)>>7);
+			ptrPGE->olc_UpdateMouseState(2,GetAsyncKeyState(VK_MBUTTON)>>7);
+			ptrPGE->olc_UpdateMouseState(3,GetAsyncKeyState(VK_XBUTTON1)>>7);
+			ptrPGE->olc_UpdateMouseState(4,GetAsyncKeyState(VK_XBUTTON2)>>7);
+			return olc::rcode::OK;
+		}
 
 		// Windows Event Handler - this is statically connected to the windows event system
 		static LRESULT CALLBACK olc_WindowEvent(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
@@ -5538,6 +5563,7 @@ namespace olc
 				ptrPGE->olc_UpdateMouse(ix, iy);
 				return 0;
 			}
+			case WM_MOVE:		ptrPGE->olc_UpdateWindowPos(lParam & 0xFFFF, (lParam >> 16) & 0xFFFF); return 0;
 			case WM_SIZE:       ptrPGE->olc_UpdateWindowSize(lParam & 0xFFFF, (lParam >> 16) & 0xFFFF);	return 0;
 			case WM_MOUSEWHEEL:	ptrPGE->olc_UpdateMouseWheel(GET_WHEEL_DELTA_WPARAM(wParam));           return 0;
 			case WM_MOUSELEAVE: ptrPGE->olc_UpdateMouseFocus(false);                                    return 0;
@@ -5783,11 +5809,13 @@ namespace olc
 				{
 					XWindowAttributes gwa;
 					XGetWindowAttributes(olc_Display, olc_Window, &gwa);
+					ptrPGE->olc_UpdateWindowPos(gwa.x, gwa.y);
 					ptrPGE->olc_UpdateWindowSize(gwa.width, gwa.height);
 				}
 				else if (xev.type == ConfigureNotify)
 				{
 					XConfigureEvent xce = xev.xconfigure;
+					ptrPGE->olc_UpdateWindowPos(xce.x, xce.y);
 					ptrPGE->olc_UpdateWindowSize(xce.width, xce.height);
 				}
 				else if (xev.type == KeyPress)
@@ -6265,24 +6293,24 @@ namespace olc
 			mapKeys[DOM_PK_QUOTE] = Key::OEM_7; mapKeys[DOM_PK_BACKSLASH] = Key::OEM_8;
 
 			// Keyboard Callbacks
-			emscripten_set_keydown_callback("#canvas", 0, 1, keyboard_callback);
-			emscripten_set_keyup_callback("#canvas", 0, 1, keyboard_callback);
+			emscripten_set_keydown_callback("body", 0, 1, keyboard_callback);
+			emscripten_set_keyup_callback("body", 0, 1, keyboard_callback);
 
 			// Mouse Callbacks
 			emscripten_set_wheel_callback("#canvas", 0, 1, wheel_callback);
-			emscripten_set_mousedown_callback("#canvas", 0, 1, mouse_callback);
-			emscripten_set_mouseup_callback("#canvas", 0, 1, mouse_callback);
-			emscripten_set_mousemove_callback("#canvas", 0, 1, mouse_callback);
+			emscripten_set_mousedown_callback("body", 0, 1, mouse_callback);
+			emscripten_set_mouseup_callback("body", 0, 1, mouse_callback);
+			emscripten_set_mousemove_callback("body", 0, 1, mouse_callback);
 
 			// Touch Callbacks
-			emscripten_set_touchstart_callback("#canvas", 0, 1, touch_callback);
-			emscripten_set_touchmove_callback("#canvas", 0, 1, touch_callback);
-			emscripten_set_touchend_callback("#canvas", 0, 1, touch_callback);
+			emscripten_set_touchstart_callback("body", 0, 1, touch_callback);
+			emscripten_set_touchmove_callback("body", 0, 1, touch_callback);
+			emscripten_set_touchend_callback("body", 0, 1, touch_callback);
 
 			// Canvas Focus Callbacks
 			emscripten_set_blur_callback("#canvas", 0, 1, focus_callback);
 			emscripten_set_focus_callback("#canvas", 0, 1, focus_callback);
-			
+
 #pragma warning disable format
 			EM_ASM( window.onunload = Module._olc_OnPageUnload; );
 
@@ -6297,7 +6325,7 @@ namespace olc
 			//
 			//	Wake up people! Of course theres a spoon. There has to be to keep feeding
 			//	the giant web baby.
-			
+
 
 			EM_ASM({
 
@@ -6312,6 +6340,8 @@ namespace olc
 			// Here we assume any html shell that uses 3 or more instance of the class "emscripten"
 			// is using one of the default or minimal emscripten page layouts
 			Module.olc_AssumeDefaultShells = (document.querySelectorAll('.emscripten').length >= 3) ? true : false;
+
+			oncontextmenu=function(e){return false}; //Because we can click outside the window, we want to disable normal right-click context menu for the application.
 
 			// olc_ResizeHandler
 			// 
@@ -6370,7 +6400,7 @@ namespace olc
 					setTimeout(function() { Module.olc_Init(); }, 50);
 					return;
 				}
-					
+
 				let resizeObserver = new ResizeObserver(function(entries)
 				{
 					Module.olc_ResizeHandler();
@@ -6451,13 +6481,13 @@ namespace olc
 			// Move
 			if (eventType == EMSCRIPTEN_EVENT_TOUCHMOVE)
 			{
-				ptrPGE->olc_UpdateMouse(e->touches->targetX, e->touches->targetY);
+				ptrPGE->olc_UpdateMouse(e->touches->targetX-ptrPGE->GetWindowPos().x, e->touches->targetY-ptrPGE->GetWindowPos().y);
 			}
 
 			// Start
 			if (eventType == EMSCRIPTEN_EVENT_TOUCHSTART)
 			{
-				ptrPGE->olc_UpdateMouse(e->touches->targetX, e->touches->targetY);
+				ptrPGE->olc_UpdateMouse(e->touches->targetX-ptrPGE->GetWindowPos().x, e->touches->targetY-ptrPGE->GetWindowPos().y);
 				ptrPGE->olc_UpdateMouseState(0, true);
 			}
 
@@ -6475,7 +6505,7 @@ namespace olc
 		{
 			//Mouse Movement
 			if (eventType == EMSCRIPTEN_EVENT_MOUSEMOVE)
-				ptrPGE->olc_UpdateMouse(e->targetX, e->targetY);
+				ptrPGE->olc_UpdateMouse(e->targetX-ptrPGE->GetWindowPos().x, e->targetY-ptrPGE->GetWindowPos().y);
 
 
 			//Mouse button press
@@ -6518,7 +6548,10 @@ namespace olc
 		{ return olc::OK; }
 
 		virtual olc::rcode HandleSystemEvent() override
-		{ return olc::OK; }
+		{ 
+			ptrPGE->olc_UpdateWindowPos(EM_ASM_INT({return Module.canvas.getBoundingClientRect().left}),EM_ASM_INT({return Module.canvas.getBoundingClientRect().top}));
+			return olc::OK;
+		}
 
 		static void MainLoop()
 		{
@@ -6693,4 +6726,3 @@ namespace olc
 // O------------------------------------------------------------------------------O
 // | END OF OLC_PGE_APPLICATION                                                   |
 // O------------------------------------------------------------------------------O
-
