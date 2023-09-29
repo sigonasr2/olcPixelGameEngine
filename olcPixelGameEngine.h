@@ -2003,7 +2003,6 @@ namespace olc
 
 		// Construct the window
 		if (platform->CreateWindowPane({ 30,30 }, vWindowSize, bFullScreen) != olc::OK) return olc::FAIL;
-		olc_UpdateWindowPos(30,30);
 		olc_UpdateWindowSize(vWindowSize.x, vWindowSize.y);
 
 		// Start the thread
@@ -5468,6 +5467,8 @@ namespace olc
 			olc_hWnd = CreateWindowEx(dwExStyle, olcT("OLC_PIXEL_GAME_ENGINE"), olcT(""), dwStyle,
 				vTopLeft.x, vTopLeft.y, width, height, NULL, NULL, GetModuleHandle(nullptr), this);
 
+			MoveWindow(olc_hWnd,vTopLeft.x,vTopLeft.y,width,height,false); //A hack to get the window's position updated in the correct spot (WM_MOVE reports the correct upper-left corner of the client area)
+
 			DragAcceptFiles(olc_hWnd, true);
 
 			// Create Keyboard Mapping
@@ -5563,7 +5564,13 @@ namespace olc
 				ptrPGE->olc_UpdateMouse(ix, iy);
 				return 0;
 			}
-			case WM_MOVE:		ptrPGE->olc_UpdateWindowPos(lParam & 0xFFFF, (lParam >> 16) & 0xFFFF); return 0;
+			case WM_MOVE:
+			{
+				uint16_t x = lParam & 0xFFFF; uint16_t y = (lParam >> 16) & 0xFFFF;
+				int16_t ix = *(int16_t*)&x;   int16_t iy = *(int16_t*)&y;
+				ptrPGE->olc_UpdateWindowPos(ix, iy);
+				return 0;
+			}
 			case WM_SIZE:       ptrPGE->olc_UpdateWindowSize(lParam & 0xFFFF, (lParam >> 16) & 0xFFFF);	return 0;
 			case WM_MOUSEWHEEL:	ptrPGE->olc_UpdateMouseWheel(GET_WHEEL_DELTA_WPARAM(wParam));           return 0;
 			case WM_MOUSELEAVE: ptrPGE->olc_UpdateMouseFocus(false);                                    return 0;
