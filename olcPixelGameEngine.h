@@ -6390,7 +6390,7 @@ namespace olc
 					
 					// update the PGE window size
 					Module._olc_PGE_UpdateWindowSize(viewWidth, viewHeight);
-					
+
 					// force focus on our PGE canvas
 					Module.canvas.focus();
 				}, 200);
@@ -6488,13 +6488,13 @@ namespace olc
 			// Move
 			if (eventType == EMSCRIPTEN_EVENT_TOUCHMOVE)
 			{
-				ptrPGE->olc_UpdateMouse(e->touches->targetX-ptrPGE->GetWindowPos().x, e->touches->targetY-ptrPGE->GetWindowPos().y);
+				ptrPGE->olc_UpdateMouse(e->touches->targetX-ptrPGE->GetWindowPos().x-EM_ASM_INT({return window.scrollX}), e->touches->targetY-ptrPGE->GetWindowPos().y-EM_ASM_INT({return window.scrollY}));
 			}
 
 			// Start
 			if (eventType == EMSCRIPTEN_EVENT_TOUCHSTART)
 			{
-				ptrPGE->olc_UpdateMouse(e->touches->targetX-ptrPGE->GetWindowPos().x, e->touches->targetY-ptrPGE->GetWindowPos().y);
+				ptrPGE->olc_UpdateMouse(e->touches->targetX-ptrPGE->GetWindowPos().x-EM_ASM_INT({return window.scrollX}), e->touches->targetY-ptrPGE->GetWindowPos().y-EM_ASM_INT({return window.scrollY}));
 				ptrPGE->olc_UpdateMouseState(0, true);
 			}
 
@@ -6512,7 +6512,7 @@ namespace olc
 		{
 			//Mouse Movement
 			if (eventType == EMSCRIPTEN_EVENT_MOUSEMOVE)
-				ptrPGE->olc_UpdateMouse(e->targetX-ptrPGE->GetWindowPos().x, e->targetY-ptrPGE->GetWindowPos().y);
+				ptrPGE->olc_UpdateMouse(e->targetX-ptrPGE->GetWindowPos().x-EM_ASM_INT({return window.scrollX}), e->targetY-ptrPGE->GetWindowPos().y-EM_ASM_INT({return window.scrollY}));
 
 
 			//Mouse button press
