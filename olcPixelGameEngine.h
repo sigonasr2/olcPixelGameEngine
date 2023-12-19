@@ -6300,19 +6300,19 @@ namespace olc
 			mapKeys[DOM_PK_QUOTE] = Key::OEM_7; mapKeys[DOM_PK_BACKSLASH] = Key::OEM_8;
 
 			// Keyboard Callbacks
-			emscripten_set_keydown_callback("body", 0, 1, keyboard_callback);
-			emscripten_set_keyup_callback("body", 0, 1, keyboard_callback);
+			emscripten_set_keydown_callbacEMSCRIPTEN_EVENT_TARGET_WINDOW, 0, 1, keyboard_callback);
+			emscripten_set_keyup_callback(EMSCRIPTEN_EVENT_TARGET_WINDOW, 0, 1, keyboard_callback);
 
 			// Mouse Callbacks
 			emscripten_set_wheel_callback("#canvas", 0, 1, wheel_callback);
-			emscripten_set_mousedown_callback("body", 0, 1, mouse_callback);
-			emscripten_set_mouseup_callback("body", 0, 1, mouse_callback);
-			emscripten_set_mousemove_callback("body", 0, 1, mouse_callback);
+			emscripten_set_mousedown_callback(EMSCRIPTEN_EVENT_TARGET_WINDOW, 0, 1, mouse_callback);
+			emscripten_set_mouseup_callback(EMSCRIPTEN_EVENT_TARGET_WINDOW, 0, 1, mouse_callback);
+			emscripten_set_mousemove_callback(EMSCRIPTEN_EVENT_TARGET_WINDOW, 0, 1, mouse_callback);
 
 			// Touch Callbacks
-			emscripten_set_touchstart_callback("body", 0, 1, touch_callback);
-			emscripten_set_touchmove_callback("body", 0, 1, touch_callback);
-			emscripten_set_touchend_callback("body", 0, 1, touch_callback);
+			emscripten_set_touchstart_callback(EMSCRIPTEN_EVENT_TARGET_WINDOW, 0, 1, touch_callback);
+			emscripten_set_touchmove_callback(EMSCRIPTEN_EVENT_TARGET_WINDOW, 0, 1, touch_callback);
+			emscripten_set_touchend_callback(EMSCRIPTEN_EVENT_TARGET_WINDOW, 0, 1, touch_callback);
 
 			// Canvas Focus Callbacks
 			emscripten_set_blur_callback("#canvas", 0, 1, focus_callback);
