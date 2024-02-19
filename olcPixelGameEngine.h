@@ -943,6 +943,7 @@ namespace olc
 		virtual olc::rcode CreateGraphics(bool bFullScreen, bool bEnableVSYNC, const olc::vi2d& vViewPos, const olc::vi2d& vViewSize) = 0;
 		virtual olc::rcode CreateWindowPane(const olc::vi2d& vWindowPos, olc::vi2d& vWindowSize, bool bFullScreen) = 0;
 		virtual olc::rcode SetWindowTitle(const std::string& s) = 0;
+		virtual olc::rcode SetFullscreen(const bool bFullscreen, const vi2d windowPos = {})=0;
 		virtual olc::rcode StartSystemEventLoop() = 0;
 		virtual olc::rcode HandleSystemEvent() = 0;
 		static olc::PixelGameEngine* ptrPGE;
@@ -1059,7 +1060,7 @@ namespace olc
 		// Change the blend factor from between 0.0f to 1.0f;
 		void SetPixelBlend(float fBlend);
 
-
+		void SetFullscreen(const bool bFullscreen, const vi2d windowPos = {});
 
 	public: // DRAWING ROUTINES
 		// Draws a single Pixel
@@ -3462,6 +3463,11 @@ namespace olc
 		if (fBlendFactor > 1.0f) fBlendFactor = 1.0f;
 	}
 
+	void PixelGameEngine::SetFullscreen(const bool bFullscreen, const vi2d windowPos){
+		this->bFullScreen=bFullscreen;
+		platform->SetFullscreen(bFullscreen,windowPos);
+	}
+
 	std::stringstream& PixelGameEngine::ConsoleOut()
 	{ return ssConsoleOutput; }
 
@@ -5510,6 +5516,33 @@ namespace olc
 #else
 			SetWindowText(olc_hWnd, s.c_str());
 #endif
+			return olc::OK;
+		}
+
+		virtual olc::rcode SetFullscreen(const bool bFullscreen,const vi2d windowPos)override{
+			// Define window furniture
+			DWORD dwExStyle = WS_EX_APPWINDOW | WS_EX_WINDOWEDGE;
+			DWORD dwStyle = WS_CAPTION | WS_SYSMENU | WS_VISIBLE | WS_THICKFRAME;
+			if (bFullscreen)
+			{
+				dwExStyle = 0;
+				dwStyle = WS_VISIBLE | WS_POPUP;
+				HMONITOR hmon = MonitorFromWindow(olc_hWnd, MONITOR_DEFAULTTONEAREST);
+				MONITORINFO mi = { sizeof(mi) };
+				if (!GetMonitorInfo(hmon, &mi)) return olc::rcode::FAIL;
+				//AdjustWindowRectEx(&rWndRect, dwStyle, FALSE, dwExStyle);
+				SetWindowLongPtrA(olc_hWnd,GWL_EXSTYLE,dwExStyle);
+				SetWindowLongPtrA(olc_hWnd,GWL_STYLE,dwStyle);
+				MoveWindow(olc_hWnd,0,0,mi.rcMonitor.right,mi.rcMonitor.bottom,true);
+			}else{
+				RECT rWndRect = { 0, 0, ptrPGE->GetScreenSize().x*ptrPGE->GetPixelSize().x, ptrPGE->GetScreenSize().y*ptrPGE->GetPixelSize().y };
+				SetWindowLongPtrA(olc_hWnd,GWL_EXSTYLE,dwExStyle);
+				SetWindowLongPtrA(olc_hWnd,GWL_STYLE,dwStyle);
+				AdjustWindowRectEx(&rWndRect, dwStyle, FALSE, dwExStyle);
+				int width = rWndRect.right - rWndRect.left;
+				int height = rWndRect.bottom - rWndRect.top;
+				MoveWindow(olc_hWnd,windowPos.x, windowPos.y, width, height,true);
+			}
 			return olc::OK;
 		}
 
