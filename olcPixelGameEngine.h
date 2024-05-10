@@ -1061,6 +1061,8 @@ namespace olc
 		void SetPixelMode(std::function<olc::Pixel(const int x, const int y, const olc::Pixel& pSource, const olc::Pixel& pDest)> pixelMode);
 		// Change the blend factor from between 0.0f to 1.0f;
 		void SetPixelBlend(float fBlend);
+		void SetCustomFont(const std::string&fontPath);
+		void SetCustomFontSpacing(const std::array<uint8_t,96>vSpacing);
 
 
 
@@ -3535,6 +3537,15 @@ namespace olc
 		fBlendFactor = fBlend;
 		if (fBlendFactor < 0.0f) fBlendFactor = 0.0f;
 		if (fBlendFactor > 1.0f) fBlendFactor = 1.0f;
+	}
+
+	void PixelGameEngine::SetCustomFont(const std::string&fontPath){
+		fontRenderable.Load(fontPath);
+	}
+
+	void PixelGameEngine::SetCustomFontSpacing(const std::array<uint8_t,96>vSpacing){
+		vFontSpacing.clear();
+		for (auto c : vSpacing)vFontSpacing.push_back({ c >> 4, c & 15 });
 	}
 
 	std::stringstream& PixelGameEngine::ConsoleOut()
