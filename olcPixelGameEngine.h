@@ -409,6 +409,7 @@ int main()
 #include <algorithm>
 #include <array>
 #include <cstring>
+#include <cassert>
 #pragma endregion
 
 #define PGE_VER 227
@@ -1419,7 +1420,11 @@ namespace olc
 	#endif
 
 	#if defined(__APPLE__)
+		#define CALLSTYLE
+		//#define GL_CLAMP GL_CLAMP_TO_EDGE
+		#define OGL_LOAD(t, n) n;
 		#define GL_SILENCE_DEPRECATION
+		#define GL_GLEXT_PROTOTYPES
 		#include <OpenGL/OpenGL.h>
 		#include <OpenGL/gl.h>
 		#include <OpenGL/glu.h>

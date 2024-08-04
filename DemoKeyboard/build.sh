@@ -5,7 +5,7 @@
 #
 
 # MacOS GLUT
-# clang++ -I.. -o DemoKeyboard-mac DemoKeyboard.cpp -arch x86_64 -std=c++20 -mmacosx-version-min=10.15 -Wall -framework OpenGL -framework GLUT -framework Carbon -lpng
+clang++ -I.. -o DemoKeyboard-mac DemoKeyboard.cpp -arch arm64 -std=c++20 -mmacosx-version-min=10.15 -Wall -framework OpenGL -framework GLUT -framework Carbon -lpng
 
 # Linux XLIB
 # clang++ -I.. -o DemoKeyboard-xlib DemoKeyboard.cpp -O2 -lX11 -lGL -lm -lpthread -lpng -lstdc++fs -std=c++20

@@ -1,4 +1,5 @@
 #define OLC_PGE_APPLICATION
+#define OLC_GFX_OPENGL33
 #include "olcPixelGameEngine.h"
 
 struct Key
